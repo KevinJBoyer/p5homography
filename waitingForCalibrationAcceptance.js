@@ -58,7 +58,10 @@ window.drawWaitingForCalibrationAcceptanceScreen = async function (
           fill(100, 150, 210);
           if (i == 8) {
             fill("red");
-            console.log(landmark.z);
+            // I'm using this to test out how accurate landmark.z is
+            // Current findings: it's decent when the hand is a larger portion of the camera feed,
+            // but if it's far away it's too noisy to be usable.
+            // console.log(landmark.z);
           }
           const [x, y] = mediapipeCoordinatesToScreenCoordinates(
             landmark.x,
