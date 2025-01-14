@@ -88,17 +88,18 @@ window.drawCalibratingScreen = async function (stateMachine, p5) {
     noStroke();
 
     let direction = marker.id < 2 ? 1 : -1;
-
-    particleGenerator(
+    particleVerticleGenerator(
       markerCoords[marker.id][0],
       markerCoords[marker.id][1] + (marker.id < 2 ? markerSize : 0),
       markerSize,
       direction
     );
 
-    particleGenerator(
-      markerCoords[marker.id][0],
-      markerCoords[marker.id][1] + (marker.id < 2 ? markerSize : 0),
+    direction = marker.id == 0 || marker.id == 3 ? 1 : -1;
+    particleHorizontalGenerator(
+      markerCoords[marker.id][0] +
+        (marker.id == 0 || marker.id == 3 ? markerSize : 0),
+      markerCoords[marker.id][1],
       markerSize,
       direction
     );
@@ -174,11 +175,17 @@ async function createNewCameraSelectBox() {
   });
 }
 
-function particleGenerator(lineX, lineY, lineSize, direction) {
-  // for (let i = 0; i < 100; i++) {
-  //   particles.push(new Particle(lineX, lineY, direction));
-  // }
-  particles.push(new Particle(lineX, lineY, lineSize, direction));
+function particleVerticleGenerator(lineX, lineY, lineSize, direction) {
+  const x = random(lineX, lineX + lineSize);
+  const xSpeed = random(-1, 1);
+  const ySpeed = direction * random(0, 5);
+  particles.push(new Particle(x, lineY, xSpeed, ySpeed));
+}
+function particleHorizontalGenerator(lineX, lineY, lineSize, direction) {
+  const y = random(lineY, lineY + lineSize);
+  const xSpeed = direction * random(0, 5);
+  const ySpeed = random(-1, 1);
+  particles.push(new Particle(lineX, y, xSpeed, ySpeed));
 }
 
 function setHomography(

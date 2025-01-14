@@ -2,12 +2,12 @@
 class Particle {
   // setting the co-ordinates, radius and the
   // speed of a particle in both the co-ordinates axes.
-  constructor(x, y, lineSize, direction) {
-    this.x = random(x, x + lineSize);
+  constructor(x, y, xSpeed, ySpeed) {
+    this.x = x;
     this.y = y; //random(0, height);
     this.r = random(1, 15);
-    this.xSpeed = random(-1, 1);
-    this.ySpeed = direction * random(0, 5);
+    this.xSpeed = xSpeed;
+    this.ySpeed = ySpeed;
     this.isAlive = true;
     this.alpha = 1;
     this.sizeChange = random(0.1, 0.5);
