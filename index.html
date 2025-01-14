@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sketch</title>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script src="libraries/p5.min.js"></script>
+    <script src="libraries/p5.sound.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.svg.min.js"></script>
+  
+    <!-- For computing the homography between the camera and the screen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <script type="module" src="homography.js"></script>
+
+    <!-- For generating the Aruco Markers and detecting them -->
+    <!-- https://github.com/damianofalcioni/js-aruco2/tree/master -->
+    <script src="libraries/js-aruco2/cv.js"></script>
+    <script src="libraries/js-aruco2/aruco.js"></script>
+    <script src="libraries/js-aruco2/dictionaries/aruco_4x4_1000.js"></script> 
+
+    <!-- https://github.com/jakesgordon/javascript-state-machine  -->
+    <script src="libraries/state-machine.min.js"></script>
+  </head>
+
+  <body>
+    <!-- https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <!-- These are the different states of the app -->
+    <!-- sketch.js is what p5 will invoke, and sketch.js calls out to these other scripts -->
+    <script type="module" src="calibrating.js"></script>
+    <script type="module" src="waitingForCalibrationAcceptance.js"></script>
+    <script src="sketch.js"></script>
+  </body>
+</html>
