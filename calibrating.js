@@ -1,3 +1,5 @@
+import Particle from "./particles.js";
+
 // future -- do we even need these, or can we grab
 // the current cameraId from `camera` itself?
 let cameraId; // or hardcode for your machine, e.g., "e96f90f92aa58e90e3dcbd40ef8ea2620b0905f2fc390e37544060b2d4fdd8c9"
@@ -6,6 +8,8 @@ let cameraSelect;
 let detector;
 let detectedMarkers;
 let markers;
+
+let particles = [];
 
 window.drawCalibratingScreen = async function (stateMachine, p5) {
   if (!markers) {
@@ -48,13 +52,63 @@ window.drawCalibratingScreen = async function (stateMachine, p5) {
   // So we don't "detect" the markers both in the actual screen corners,
   // and in the camera feed itself
   fill("black");
+
+  const markerCoords = [
+    [0, 0], // Coordinate of the top left corner of the top left marker
+    [p5.windowWidth - markerSize, 0], // Coordinate of the top left corner of the top right marker
+    [p5.windowWidth - markerSize, p5.windowHeight - markerSize],
+    [0, p5.windowHeight - markerSize],
+  ];
+
   detectedMarkers.forEach((marker) => {
     quad();
     const c = marker.corners.map((corner) =>
       markerPointToCanvasPoint(cameraX, cameraY, corner)
     );
+    strokeWeight(0);
     quad(c[0].x, c[0].y, c[1].x, c[1].y, c[2].x, c[2].y, c[3].x, c[3].y);
+
+    // Draw glow around the corners of the original markers in the window itself
+    stroke("orange");
+    strokeWeight(10);
+
+    // point(markerCoords[marker.id][0], markerCoords[marker.id][1]);
+    // point(markerCoords[marker.id][0] + markerSize, markerCoords[marker.id][1]);
+    // point(
+    //   markerCoords[marker.id][0] + markerSize,
+    //   markerCoords[marker.id][1] + markerSize
+    // );
+    // point(markerCoords[marker.id][0], markerCoords[marker.id][1] + markerSize);
+
+    noFill();
+    square(markerCoords[marker.id][0], markerCoords[marker.id][1], markerSize);
+
+    fill("black");
+
+    noStroke();
+
+    let direction = marker.id < 2 ? 1 : -1;
+
+    particleGenerator(
+      markerCoords[marker.id][0],
+      markerCoords[marker.id][1] + (marker.id < 2 ? markerSize : 0),
+      markerSize,
+      direction
+    );
+
+    particleGenerator(
+      markerCoords[marker.id][0],
+      markerCoords[marker.id][1] + (marker.id < 2 ? markerSize : 0),
+      markerSize,
+      direction
+    );
   });
+
+  /*
+     - Flames around the detected markers
+     - Lines from the markers in the camera image to the detected marker
+     - Glowing text
+    */
 
   // Show the count of how many markers we found
   // De-duplicate by marker ID because sometimes we detect the same marker twice
@@ -81,6 +135,8 @@ window.drawCalibratingScreen = async function (stateMachine, p5) {
     cameraSelect.remove();
     stateMachine.waitForCalibrationAcceptance();
   }
+
+  drawParticles(p5);
 };
 
 async function setupCalibratingScreen(p5) {
@@ -118,6 +174,13 @@ async function createNewCameraSelectBox() {
   });
 }
 
+function particleGenerator(lineX, lineY, lineSize, direction) {
+  // for (let i = 0; i < 100; i++) {
+  //   particles.push(new Particle(lineX, lineY, direction));
+  // }
+  particles.push(new Particle(lineX, lineY, lineSize, direction));
+}
+
 function setHomography(
   detectedMarkers,
   markerSize,
@@ -152,6 +215,7 @@ function setHomography(
 
 function drawCalibrationMarkers(markers, markerSize, p5) {
   // Draw the markers on the four corners of the screen
+  // If a marker is detected, draw a flaming outline around it
 
   const markerCoords = [
     [0, 0],
@@ -164,6 +228,16 @@ function drawCalibrationMarkers(markers, markerSize, p5) {
     const y = markerCoords[i][1];
     image(marker, x, y);
   });
+}
+
+function drawParticles(p5) {
+  // Draw the particles
+  particles.forEach((particle) => {
+    particle.createParticle();
+    particle.moveParticle();
+    // particle.joinParticles(particles);
+  });
+  particles = particles.filter((particle) => particle.isAlive);
 }
 
 function markerPointToCanvasPoint(cameraX, cameraY, point) {
