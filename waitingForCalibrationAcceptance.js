@@ -2,11 +2,18 @@ import {
   HandLandmarker,
   FilesetResolver,
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
+
+import KalmanFilter2D from "./kalman2d.js";
+
 let handLandmarker;
 
 let handResults;
 
 let isInitializing = false;
+
+let kalmanFilter;
+
+let indexKfX, indexKfY;
 
 window.drawWaitingForCalibrationAcceptanceScreen = async function (
   stateMachine,
@@ -44,10 +51,45 @@ window.drawWaitingForCalibrationAcceptanceScreen = async function (
   */
 
   // It's expensive to try to detect the markers
-  // so only do this once every 6 frames (still ten times a second)
-  if (p5.frameCount % 3 == 0) {
+  // so only do this once every 5 frames
+  if (p5.frameCount % 5 == 0) {
     let startTimeMs = performance.now();
     handResults = handLandmarker.detectForVideo(camera.elt, startTimeMs);
+
+    if (
+      handResults &&
+      handResults.landmarks &&
+      handResults.landmarks.length > 0
+    ) {
+      if (!kalmanFilter) {
+        const [x, y] = mediapipeCoordinatesToScreenCoordinates(
+          handResults.landmarks[0][8].x,
+          handResults.landmarks[0][8].y
+        );
+        kalmanFilter = new KalmanFilter2D({
+          initialState: [x, y, 0, 0], // Index finger position
+          processNoise: 1.0, // Lower values = smoother but more laggy
+          measurementNoise: 0.1, // Higher values = trust measurements less
+          dt: 1 / 12, // this happens every 1/12 a second (5 frames)
+        });
+      } else {
+        kalmanFilter.predict();
+        [indexKfX, indexKfY] = kalmanFilter.update(
+          mediapipeCoordinatesToScreenCoordinates(
+            handResults.landmarks[0][8].x,
+            handResults.landmarks[0][8].y
+          )
+        );
+        console.log(indexKfX, indexKfY);
+      }
+    } else {
+      kalmanFilter = null;
+    }
+  }
+
+  if (kalmanFilter && indexKfX) {
+    fill("green");
+    circle(indexKfX, indexKfY, 10);
   }
 
   if (handResults) {

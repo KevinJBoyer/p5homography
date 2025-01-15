@@ -2,7 +2,8 @@ import Particle from "./particles.js";
 
 // future -- do we even need these, or can we grab
 // the current cameraId from `camera` itself?
-let cameraId; // or hardcode for your machine, e.g., "e96f90f92aa58e90e3dcbd40ef8ea2620b0905f2fc390e37544060b2d4fdd8c9"
+let cameraId =
+  "e96f90f92aa58e90e3dcbd40ef8ea2620b0905f2fc390e37544060b2d4fdd8c9"; // or hardcode for your machine, e.g., "e96f90f92aa58e90e3dcbd40ef8ea2620b0905f2fc390e37544060b2d4fdd8c9"
 let cameraSelect;
 
 let detector;
