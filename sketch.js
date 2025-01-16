@@ -35,6 +35,11 @@ async function setup() {
         from: "waitingForCalibrationAcceptance",
         to: "modelingPhysics",
       },
+      {
+        name: "skipToModelingPhysics",
+        from: "calibrating",
+        to: "modelingPhysics",
+      },
     ],
     methods: {
       onWaitForCalibrationAcceptance: function () {
@@ -42,6 +47,9 @@ async function setup() {
       },
       onModelPhysics: function () {
         console.log("Transitioned to modelingPhysics.");
+      },
+      onSkipToModelingPhysics: function () {
+        console.log("Transitioned to modelingPhysics");
       },
     },
   });

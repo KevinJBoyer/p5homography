@@ -135,7 +135,8 @@ window.drawCalibratingScreen = async function (stateMachine, p5) {
       p5
     );
     cameraSelect.remove();
-    stateMachine.waitForCalibrationAcceptance();
+    //stateMachine.waitForCalibrationAcceptance();
+    stateMachine.skipToModelingPhysics();
   }
 
   drawParticles(p5);

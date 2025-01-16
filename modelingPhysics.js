@@ -17,23 +17,16 @@ let entities = [];
 let palm;
 
 class Box {
-  constructor(x, y, w, h, a) {
+  constructor(x, y, w, h) {
     this.w = w;
     this.h = h;
     this.body = Bodies.rectangle(x, y, w, h, {
       restitution: 1.0,
       density: 0.002,
-      angle: a ?? 0,
-      collisionFilter: a
-        ? {
-            category: 0x0002, // Hand category
-            mask: 0x0001, // Only collide with regular objects
-          }
-        : {
-            category: 0x0001, // Regular object category
-            mask: 0x0003,
-          },
-      //isStatic: a ? true : false,
+      collisionFilter: {
+        category: 0x0001, // Regular object category
+        mask: 0x0003,
+      },
     });
     Composite.add(engine.world, this.body);
   }
@@ -45,7 +38,6 @@ class Box {
     strokeWeight(2);
     push();
     translate(this.body.position.x, this.body.position.y);
-    rotate(this.body.angle);
     rect(0, 0, this.w, this.h);
     pop();
   }
@@ -55,6 +47,35 @@ class Box {
     if (x > 0 && x < p5.width && y > 0 && y < p5.height) return true;
     Composite.remove(engine.world, this.body);
     return false;
+  }
+}
+
+class Palm {
+  constructor(x, y, r) {
+    this.r = r;
+    this.body = Bodies.circle(x, y, r, {
+      restitution: 1.0,
+      density: 0.002,
+      collisionFilter: {
+        category: 0x0002, // Hand category
+        mask: 0x0001, // Only collide with regular objects
+      },
+    });
+    Composite.add(engine.world, this.body);
+  }
+
+  draw() {
+    fill(127);
+    stroke(0);
+    strokeWeight(2);
+    push();
+    translate(this.body.position.x, this.body.position.y);
+    circle(0, 0, this.r);
+    pop();
+  }
+
+  remove() {
+    Composite.remove(engine.world, this.body);
   }
 }
 
@@ -79,12 +100,14 @@ window.drawModelingPhysicsScreen = async function (stateMachine, p5) {
     handResults.landmarks.length == 1
   ) {
     framesSinceSeenPalm = 0;
+
     let detectedPalm = [
       handResults.landmarks[0][0], // wrist
       //handResults.landmarks[0][5], // start of index finger
       //handResults.landmarks[0][6],
       //handResults.landmarks[0][7],
-      handResults.landmarks[0][8], // end of index finger
+      // handResults.landmarks[0][8], // end of index finger
+      handResults.landmarks[0][10], // middle of middle finger
     ].map((landmark) =>
       mediapipeCoordinatesToScreenCoordinates(landmark.x, landmark.y)
     );
@@ -92,49 +115,51 @@ window.drawModelingPhysicsScreen = async function (stateMachine, p5) {
     // now compute the rectangle of the palm
     const [x1, y1] = detectedPalm[0];
     const [x2, y2] = detectedPalm[1];
-    const palmWidth = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    const palmRadius =
+      0.75 * Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     const palmX = (x1 + x2) / 2;
     const palmY = (y1 + y2) / 2;
-    const palmHeight = 16;
-    const palmAngle = Math.atan2(y2 - y1, x2 - x1);
 
     // If we haven't detected the palm yet, create the corresponding object
     if (!palm) {
-      console.log("Created palm");
-      palm = new Box(palmX, palmY, palmWidth, palmHeight, palmAngle);
+      // Only create it if we're away from the static body boundaries of the window
+      const padding = 5;
+      if (
+        palmX > palmRadius + padding &&
+        palmX < p5.width - padding &&
+        palmY > palmRadius + padding &&
+        palmY < p5.height - padding
+      ) {
+        console.log("Created palm");
+        palm = new Palm(palmX, palmY, palmRadius);
+      }
     } else {
-      // If we have detected the palm, accelerated it to the new location
-      const forceMultiplier = 0.01;
-      const forceVector = {
-        x: (palmX - palm.body.position.x) * forceMultiplier,
-        y: (palmY - palm.body.position.y) * forceMultiplier,
+      // If we have detected new palm coordinates, make the palm arrive at the new location
+      const targetPosition = { x: palmX, y: palmY };
+      const displacement = {
+        x: targetPosition.x - palm.body.position.x,
+        y: targetPosition.y - palm.body.position.y,
       };
-      Body.applyForce(palm.body, palm.body.position, forceVector);
-
-      // Calculate target angle
-      const targetAngle = Math.atan2(y2 - y1, x2 - x1);
-      const currentAngle = palm.body.angle;
-
-      // Calculate angular force (torque)
-      const angleDiff = targetAngle - currentAngle;
-      // Normalize angle difference to be between -PI and PI
-      const normalizedAngleDiff =
-        ((angleDiff + Math.PI) % (2 * Math.PI)) - Math.PI;
-      const torque = normalizedAngleDiff * forceMultiplier;
-
-      // Apply torque
-      Body.setAngularVelocity(palm.body, palm.body.angularVelocity + torque);
-
-      // Calculate target width and current width
-      const targetWidth = Math.sqrt(
-        Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)
+      const distance = Math.sqrt(
+        displacement.x * displacement.x + displacement.y * displacement.y
       );
-      const currentWidth = palm.body.bounds.max.x - palm.body.bounds.min.x;
 
-      // Smoothly scale the body if width changed
-      if (Math.abs(targetWidth - currentWidth) > 0.1) {
-        const scale = targetWidth / currentWidth;
-        Body.scale(palm.body, scale, 1); // Scale only in x direction
+      const maxSpeed = 50; // adjust this to control maximum speed
+      const dampingDistance = 50; // distance at which to start slowing down
+      const speedMultiplier = Math.min(1, distance / dampingDistance);
+
+      const velocity = {
+        x: (displacement.x * speedMultiplier * maxSpeed) / distance,
+        y: (displacement.y * speedMultiplier * maxSpeed) / distance,
+      };
+
+      // Prevent NaN when distance is 0
+      if (distance > 5) {
+        Body.setVelocity(palm.body, velocity);
+      } else {
+        // If very close to target, stop completely
+        Body.setVelocity(palm.body, { x: 0, y: 0 });
+        Body.setPosition(palm.body, targetPosition);
       }
     }
   } else {
@@ -142,12 +167,12 @@ window.drawModelingPhysicsScreen = async function (stateMachine, p5) {
   }
 
   if (palm && framesSinceSeenPalm > 60) {
-    Composite.remove(engine.world, palm.body);
+    palm.remove();
     palm = undefined;
     console.log("Killed palm");
   }
 
-  if (palm) palm.draw();
+  //if (palm) palm.draw();
 };
 
 function mediapipeCoordinatesToScreenCoordinates(mediapipeX, mediapipeY) {
