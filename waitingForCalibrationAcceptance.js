@@ -15,11 +15,13 @@ let kalmanFilter;
 
 let indexKfX, indexKfY;
 
+let prevX, prevY, prevZ;
+
 window.drawWaitingForCalibrationAcceptanceScreen = async function (
   stateMachine,
   p5
 ) {
-  clear();
+  //clear();
 
   // We can't do anything if handLandMarker isn't initialized yet,
   // BUT we only want to call setupDrawWaitingForCalibrationAcceptanceScreen
@@ -27,6 +29,7 @@ window.drawWaitingForCalibrationAcceptanceScreen = async function (
   // future: some kind of "loading" indicator here?
   if (!handLandmarker) {
     if (!isInitializing) {
+      clear();
       isInitializing = true;
       await setupDrawWaitingForCalibrationAcceptanceScreen();
     }
@@ -51,11 +54,12 @@ window.drawWaitingForCalibrationAcceptanceScreen = async function (
   */
 
   // It's expensive to try to detect the markers
-  // so only do this once every 5 frames
-  if (p5.frameCount % 5 == 0) {
+  if (p5.frameCount % 1 == 0) {
     let startTimeMs = performance.now();
     handResults = handLandmarker.detectForVideo(camera.elt, startTimeMs);
+  }
 
+  /*
     if (
       handResults &&
       handResults.landmarks &&
@@ -91,7 +95,31 @@ window.drawWaitingForCalibrationAcceptanceScreen = async function (
     fill("green");
     circle(indexKfX, indexKfY, 10);
   }
+  */
 
+  if (handResults) {
+    if (handResults.landmarks && handResults.landmarks.length == 1) {
+      const indexFinger = handResults.landmarks[0][8];
+      console.log(indexFinger.z);
+
+      const [x, y] = mediapipeCoordinatesToScreenCoordinates(
+        indexFinger.x,
+        indexFinger.y
+      );
+
+      if (prevZ && prevZ > 0 && indexFinger.z > 0) {
+        stroke("blue");
+        strokeWeight(10);
+        line(prevX, prevY, x, y);
+      }
+
+      prevX = x;
+      prevY = y;
+      prevZ = indexFinger.z;
+    }
+  }
+
+  /* Drawing the hand
   if (handResults) {
     if (handResults.landmarks) {
       for (const landmarks of handResults.landmarks) {
@@ -114,6 +142,7 @@ window.drawWaitingForCalibrationAcceptanceScreen = async function (
       }
     }
   }
+   */
 };
 
 function mediapipeCoordinatesToScreenCoordinates(mediapipeX, mediapipeY) {
