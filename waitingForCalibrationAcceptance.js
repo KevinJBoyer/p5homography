@@ -143,6 +143,10 @@ window.drawWaitingForCalibrationAcceptanceScreen = async function (
     }
   }
    */
+
+  if (keyIsDown(RIGHT_ARROW) === true) {
+    stateMachine.modelPhysics();
+  }
 };
 
 function mediapipeCoordinatesToScreenCoordinates(mediapipeX, mediapipeY) {

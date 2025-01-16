@@ -11,7 +11,10 @@
     <script src="libraries/p5.min.js"></script>
     <script src="libraries/p5.sound.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.svg.min.js"></script>
-  
+
+    <!-- Physics engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
     <!-- For computing the homography between the camera and the screen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
     <script type="module" src="homography.js"></script>
@@ -34,6 +37,7 @@
     <!-- sketch.js is what p5 will invoke, and sketch.js calls out to these other scripts -->
     <script type="module" src="calibrating.js"></script>
     <script type="module" src="waitingForCalibrationAcceptance.js"></script>
+    <script type="module" src="modelingPhysics.js"></script>
     <script src="sketch.js"></script>
   </body>
 </html>

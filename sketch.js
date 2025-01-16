@@ -1,5 +1,6 @@
 // We make these global because multiple states need access to them
 let camera;
+let canvas;
 let homography;
 
 // These are global because they're used by both setup() and draw() below
@@ -10,7 +11,7 @@ let stateHandlers;
 async function setup() {
   // future: it would be nice to automatically re-init the app when the window
   // is resized instead of requiring the user to refresh the page
-  createCanvas(windowWidth, windowHeight);
+  canvas = createCanvas(windowWidth, windowHeight);
 
   stateHandlers = new Map([
     ["calibrating", drawCalibratingScreen],
@@ -18,6 +19,7 @@ async function setup() {
       "waitingForCalibrationAcceptance",
       drawWaitingForCalibrationAcceptanceScreen,
     ],
+    ["modelingPhysics", drawModelingPhysicsScreen],
   ]);
 
   stateMachine = new StateMachine({
@@ -28,10 +30,18 @@ async function setup() {
         from: "calibrating",
         to: "waitingForCalibrationAcceptance",
       },
+      {
+        name: "modelPhysics",
+        from: "waitingForCalibrationAcceptance",
+        to: "modelingPhysics",
+      },
     ],
     methods: {
       onWaitForCalibrationAcceptance: function () {
         console.log("Transitioned to waitingForCalibrationAcceptance.");
+      },
+      onModelPhysics: function () {
+        console.log("Transitioned to modelingPhysics.");
       },
     },
   });
